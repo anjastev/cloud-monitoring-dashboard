@@ -1,17 +1,33 @@
 from fastapi import FastAPI
-import psutil, time
+from fastapi.middleware.cors import CORSMiddleware
+from metrics import get_metrics
+from ai_module import check_anomalies
+from config import PORT
 
-app = FastAPI()
+app = FastAPI(title="Cloud Monitoring Dashboard")
 
-@app.get("/")
-def root():
-    return {"message": "Monitoring API running"}
+# CORS 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Endpoint metrics
 @app.get("/metrics")
-def get_metrics():
-    return {
-        "cpu": psutil.cpu_percent(),
-        "memory": psutil.virtual_memory().percent,
-        "disk": psutil.disk_usage('/').percent,
-        "timestamp": time.time()
-    }
+def metrics_endpoint():
+    metrics = get_metrics()
+    return {"metrics": metrics}
+
+# Endpoint alerts
+@app.get("/alerts")
+def alerts_endpoint():
+    metrics = get_metrics()
+    alerts = check_anomalies(metrics)
+    return {"alerts": alerts}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
