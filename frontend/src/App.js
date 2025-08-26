@@ -1,37 +1,35 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import React, { useEffect, useState } from "react";
+import MetricsChart from "./components/MetricsChart";
+import AlertsList from "./components/AlertsList";
+import { fetchMetrics, fetchAlerts } from "./api";
 
 function App() {
   const [metrics, setMetrics] = useState([]);
+  const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      axios.get("http://localhost:8000/metrics").then(res => {
-        setMetrics(prev => [...prev, res.data]);
-      });
-    }, 3000);
+    const loadData = async () => {
+      try {
+        const metricsData = await fetchMetrics();
+        setMetrics(metricsData);
+
+        const alertsData = await fetchAlerts();
+        setAlerts(alertsData);
+      } catch (err) {
+        console.error("Error loading data:", err);
+      }
+    };
+
+    loadData();
+    const interval = setInterval(loadData, 5000); // refresh na 5s
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Monitoring Dashboard</h2>
-      {metrics.length > 0 && metrics[metrics.length - 1].anomaly && (
-        <div style={{ color: "red", fontWeight: "bold" }}>
-          ⚠️ Anomaly Detected!
-        </div>
-      )}
-      <LineChart width={600} height={300} data={metrics}>
-        <XAxis dataKey="timestamp" />
-        <YAxis />
-        <CartesianGrid strokeDasharray="3 3" />
-        <Tooltip />
-        <Legend />
-        <Line type="monotone" dataKey="cpu" stroke="#8884d8" />
-        <Line type="monotone" dataKey="memory" stroke="#82ca9d" />
-        <Line type="monotone" dataKey="disk" stroke="#ff7300" />
-      </LineChart>
+    <div className="App">
+      <h1>☁️ Cloud Monitoring Dashboard</h1>
+      <MetricsChart data={metrics} />
+      <AlertsList alerts={alerts} />
     </div>
   );
 }
