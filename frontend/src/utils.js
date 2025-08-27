@@ -21,3 +21,27 @@ export function pushPoint(arr, point, maxLen = 60) {
   if (next.length > maxLen) next.shift();
   return next;
 }
+
+
+
+export function exportToCSV(data, filename = "export.csv") {
+  if (!data || !data.length) return;
+
+  const headers = Object.keys(data[0]);
+  const csvRows = [
+    headers.join(","),
+    ...data.map(row => headers.map(h => row[h]).join(",")) 
+  ];
+
+  const csvString = csvRows.join("\n");
+  const blob = new Blob([csvString], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.setAttribute("hidden", "");
+  a.setAttribute("href", url);
+  a.setAttribute("download", filename);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
